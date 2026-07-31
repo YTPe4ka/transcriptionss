@@ -1,0 +1,184 @@
+{
+	"info": {
+		"_postman_id": "kirim-chiqim-api-collection",
+		"name": "Kirim-Chiqim (Income & Expense Tracker) API",
+		"description": "8-oy imtihoni uchun DRF REST API Postman to'plami. Multi-language (uz, ru, en), Auth, Accounts, Categories, Transactions va Reports.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"talaba1\",\n  \"email\": \"talaba1@example.com\",\n  \"first_name\": \"Talaba\",\n  \"last_name\": \"Foydalanuvchi\",\n  \"phone_number\": \"+998901234567\",\n  \"preferred_language\": \"uz\",\n  \"password\": \"parol1234\",\n  \"password_confirm\": \"parol1234\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/v1/auth/register/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register", ""] }
+					}
+				},
+				{
+					"name": "Login (JWT Token Obtain)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/v1/auth/login/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login", ""] }
+					}
+				},
+				{
+					"name": "User Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": { "raw": "{{baseUrl}}/api/v1/auth/profile/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "profile", ""] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Hisoblar (Accounts)",
+			"item": [
+				{
+					"name": "Get All Accounts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": { "raw": "{{baseUrl}}/api/v1/accounts/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", ""] }
+					}
+				},
+				{
+					"name": "Create Account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"UzCard SQB\",\n  \"balance\": 47000.00,\n  \"currency\": \"UZS\",\n  \"icon\": \"credit-card\",\n  \"color\": \"#2196F3\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/v1/accounts/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", ""] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Kategoriyalar (Categories)",
+			"item": [
+				{
+					"name": "Get Categories (Uzbek)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" },
+							{ "key": "Accept-Language", "value": "uz" }
+						],
+						"url": { "raw": "{{baseUrl}}/api/v1/categories/?type=EXPENSE", "host": ["{{baseUrl}}"], "path": ["api", "v1", "categories", ""], "query": [{"key": "type", "value": "EXPENSE"}] }
+					}
+				},
+				{
+					"name": "Get Categories (Russian)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" },
+							{ "key": "Accept-Language", "value": "ru" }
+						],
+						"url": { "raw": "{{baseUrl}}/api/v1/categories/?type=EXPENSE&lang=ru", "host": ["{{baseUrl}}"], "path": ["api", "v1", "categories", ""], "query": [{"key": "type", "value": "EXPENSE"}, {"key": "lang", "value": "ru"}] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Tranzaksiyalar (Transactions)",
+			"item": [
+				{
+					"name": "Get Transactions List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": { "raw": "{{baseUrl}}/api/v1/transactions/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "transactions", ""] }
+					}
+				},
+				{
+					"name": "Create Expense (Chiqim)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"EXPENSE\",\n  \"amount\": 25000.00,\n  \"account\": 1,\n  \"category\": 2,\n  \"comment\": \"Kafe va tushlik harajati\",\n  \"transaction_date\": \"2026-07-29\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/v1/transactions/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "transactions", ""] }
+					}
+				},
+				{
+					"name": "Create Income (Kirim)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"INCOME\",\n  \"amount\": 500000.00,\n  \"account\": 1,\n  \"category\": 8,\n  \"comment\": \"Oylik maosh kelib tushdi\",\n  \"transaction_date\": \"2026-07-29\"\n}"
+						},
+						"url": { "raw": "{{baseUrl}}/api/v1/transactions/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "transactions", ""] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Hisobotlar (Reports)",
+			"item": [
+				{
+					"name": "Summary Report (Total Balance & Savings)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": { "raw": "{{baseUrl}}/api/v1/reports/summary/?period=month", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reports", "summary", ""], "query": [{"key": "period", "value": "month"}] }
+					}
+				},
+				{
+					"name": "Category Breakdown Report (% and Amounts)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{accessToken}}" }
+						],
+						"url": { "raw": "{{baseUrl}}/api/v1/reports/by-category/?type=EXPENSE&period=month&lang=ru", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reports", "by-category", ""], "query": [{"key": "type", "value": "EXPENSE"}, {"key": "period", "value": "month"}, {"key": "lang", "value": "ru"}] }
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "baseUrl", "value": "http://127.0.0.1:8000" },
+		{ "key": "accessToken", "value": "YOUR_JWT_ACCESS_TOKEN_HERE" }
+	]
+}

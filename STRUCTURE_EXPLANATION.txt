@@ -1,0 +1,223 @@
+================================================================================
+          ПОЛНЫЙ СТРУКТУРНЫЙ РАЗБОР ПРОЕКТА "Kirim-Chiqim (Finance Manager)"
+               Каждая папка, файл, класс и функция с описанием
+================================================================================
+
+📁 1. config/ — Главная конфигурация и настройки Django
+--------------------------------------------------------------------------------
+• config/settings.py
+  - Настройки базы данных (SQLite), JWT токенов (SimpleJWT), CORS, разрешенных хостов.
+  - Подключение всех приложений (users, accounts, categories, transactions, reports).
+  - Настройки языков (uz, ru, en) и часового пояса (Asia/Tashkent).
+
+• config/urls.py
+  - Главный роутер всех URL-адресов приложения.
+  - Подключает префиксы:
+    /api/v1/auth/         --> Маршруты авторизации
+    /api/v1/accounts/     --> Маршруты счетов
+    /api/v1/categories/   --> Маршруты категорий
+    /api/v1/transactions/ --> Маршруты транзакций
+    /api/v1/reports/      --> Маршруты отчетов
+    /                     --> Отрисовка фронтенд интерфейса (index.html)
+
+• config/wsgi.py / config/asgi.py
+  - Точки входа для запуска проекта на боевом WSGI/ASGI сервере.
+
+
+📁 2. apps/users/ — Модуль пользователей и JWT авторизации
+--------------------------------------------------------------------------------
+• apps/users/models.py
+  - Class User(AbstractUser): 
+    Кастомная модель пользователя Django. Расширяет стандартного пользователя
+    полем preferred_language (предпочитаемый язык: uz/ru/en).
+
+• apps/users/serializers.py
+  - Class UserSerializer: 
+    Сериализатор для вывода данных профиля (id, username, email, preferred_language).
+  - Class RegisterSerializer: 
+    Сериализатор для регистрации новых пользователей. Проверяет совпадение паролей
+    (password == password_confirm) и создает аккаунт со хэшированным паролем.
+
+• apps/users/views.py
+  - Class RegisterView(APIView): 
+    Обрабатывает POST-запрос на /api/v1/auth/register/. Валидирует данные и создает пользователя.
+  - Class ProfileView(APIView): 
+    Обрабатывает GET-запрос на /api/v1/auth/profile/. Возвращает данные текущего авторизованного пользователя.
+
+• apps/users/urls.py
+  - Маршруты для получения JWT токена (login), регистрации (register), профиля (profile)
+    и обновления токенов (token/refresh).
+
+
+📁 3. apps/accounts/ — Модуль управления банковскими счетами и картами
+--------------------------------------------------------------------------------
+• apps/accounts/models.py
+  - Class Account(models.Model): 
+    Модель счета/кошелька. Хранит название (name), текущий баланс (balance),
+    валюту (currency: UZS/USD/EUR), иконку (icon), цвет (color) и привязку к пользователю.
+
+• apps/accounts/serializers.py
+  - Class AccountSerializer: 
+    Сериализатор для конвертации объекта Account в JSON и обратно.
+
+• apps/accounts/views.py
+  - Class AccountViewSet(viewsets.ModelViewSet): 
+    Набор представлений (CRUD) для счетов. Автоматически привязывает создаваемые счета
+    к текущему пользователю и фильтрует список счетов (GET/POST/PUT/DELETE /api/v1/accounts/).
+
+• apps/accounts/urls.py
+  - Автоматическая маршрутизация через DRF DefaultRouter для /api/v1/accounts/.
+
+
+📁 4. apps/categories/ — Модуль категорий расходов и доходов
+--------------------------------------------------------------------------------
+• apps/categories/models.py
+  - Class Category(models.Model): 
+    Модель категории. Содержит трехязычные названия (name_uz, name_ru, name_en),
+    тип (EXPENSE / INCOME), иконку, цвет, флаг системной категории (is_default).
+  - Function get_name(lang): 
+    Метод модели, возвращающий название категории на запрошенном языке (uz/ru/en).
+
+• apps/categories/serializers.py
+  - Class CategorySerializer: 
+    Сериализатор категорий. Динамически отдает поле name в зависимости от языка пользователя.
+
+• apps/categories/views.py
+  - Class CategoryViewSet(viewsets.ModelViewSet): 
+    CRUD для категорий. Возвращает как системные (общие) категории, так и личные категории пользователя.
+
+• apps/categories/management/commands/seed_data.py
+  - Class Command(BaseCommand): 
+    Команда Django (python manage.py seed_data), заполняющая базу дефолтными категориями
+    (Транспорт, Продукты, Здоровье, Зарплата и т.д.) на 3 языках и создающая администратора.
+
+
+📁 5. apps/transactions/ — Модуль финансовых операций (расходы/доходы)
+--------------------------------------------------------------------------------
+• apps/transactions/models.py
+  - Class Transaction(models.Model): 
+    Главная модель транзакции. Содержит тип (EXPENSE/INCOME), сумму (amount),
+    привязанный счет (account), категорию (category), дату (transaction_date), комментарий и фото.
+  - Function save(): 
+    Переопределенный метод сохранения. В атомарной транзакции автоматически измеряет
+    и обновляет баланс привязанного счета (списывает при расходе, прибавляет при доходе).
+  - Function delete(): 
+    Переопределенный метод удаления. Автоматически возвращает деньги на баланс счета
+    при удалении транзакции.
+
+• apps/transactions/serializers.py
+  - Class TransactionSerializer: 
+    Сериализатор транзакций с вложенной подробной информацией о счете и категории.
+
+• apps/transactions/views.py
+  - Class TransactionViewSet(viewsets.ModelViewSet): 
+    CRUD для транзакций на /api/v1/transactions/. Поддерживает фильтрацию по счету,
+    категории, типу и диапазону дат.
+
+
+📁 6. apps/reports/ — Модуль аналитики и формирования отчетов
+--------------------------------------------------------------------------------
+• apps/reports/views.py
+  - Function get_date_range(period, start_date_str, end_date_str):
+    Вспомогательная функция. Рассчитывает начальную и конечную дату для фильтрации (день, неделя, месяц, год).
+
+  - Class SummaryReportView(APIView):
+    GET /api/v1/reports/summary/ — возвращает сводный баланс, сумму всех доходов,
+    сумму всех расходов и чистые сбережения за указанный период (в точном формате Decimal/float).
+
+  - Class CategoryBreakdownReportView(APIView):
+    GET /api/v1/reports/by-category/ — группирует транзакции по категориям, рассчитывает
+    сумму по каждой категории и её процентную долю в общих расходах/доходах.
+
+
+📁 7. templates/index.html — Одностраничный интерфейс фронтенда (SPA)
+--------------------------------------------------------------------------------
+• JavaScript функции:
+
+  - Function showConfirm(title, message, onConfirm):
+    Показывает кастомное модальное окно подтверждения с иконкой ⚠️ (вместо confirm()).
+
+  - Function closeConfirmModal(confirmed):
+    Закрывает модальное окно подтверждения и запускает callback при согласии пользователя.
+
+  - Function showToast(message, type, title):
+    Выводит всплывающее анимированное уведомление в правом верхнем углу (вместо alert()).
+
+  - Function getAuthHeaders():
+    Формирует заголовки HTTP с токеном авторизации Bearer JWT и текущим языком.
+
+  - Function toggleMobileSidebar():
+    Переключает видимость бокового меню на мобильных устройствах.
+
+  - Function switchAuthTab(tab):
+    Переключает вкладки "Вход" и "Регистрация" на экране авторизации.
+
+  - Function handleLogin(e):
+    Отправляет POST-запрос на авторизацию, получает JWT токен и сохраняет в localStorage.
+
+  - Function handleRegister(e):
+    Отправляет POST-запрос на регистрацию нового пользователя и сразу выполняет вход.
+
+  - Function quickDemoLogin():
+    Заполняет форму данными admin/admin123 и выполняет быстрый вход в 1 клик.
+
+  - Function handleLogout():
+    Выходит из профиля, очищает токен из localStorage и возвращает экран входа.
+
+  - Function showAppLayout(username):
+    Отображает главный дашборд приложения после успешной авторизации.
+
+  - Function changeLanguage(lang):
+    Мгновенно меняет язык интерфейса (uz, ru, en) и перезагружает аналитику.
+
+  - Function setTxType(type):
+    Переключает аналитику между Расходами (EXPENSE) и Доходами (INCOME).
+
+  - Function setPeriod(period, btnEl):
+    Переключает период отчетов (День, Неделя, Месяц, Год).
+
+  - Function selectAccountFilter(accId, accName):
+    Активирует фильтрацию всей аналитики дашборда по выбранной карте/счету.
+
+  - Function clearAccountFilter():
+    Сбрасывает фильтр по карте и возвращает общий вид всех счетов.
+
+  - Function loadDashboardData():
+    Загружает сводный баланс, аналитику по категориям, счета и последние операции.
+
+  - Function loadAccountsGrid():
+    Рендерит карточки банковских счетов (Wallets) в виде красивой сетки.
+
+  - Function deleteAccount(event, accId, accName):
+    Удаляет счет из базы через DELETE API после подтверждения.
+
+  - Function deleteTransaction(event, txId, catName):
+    Удаляет выбранную транзакцию и автоматически обновляет баланс счета.
+
+  - Function renderChart(categories):
+    Строит интерактивную кольцевую диаграмму (Chart.js) распределения расходов/доходов.
+
+  - Function renderCategoryGrid(categories):
+    Выводит список категорий с цветными иконками, суммами и процентами.
+
+  - Function loadRecentTransactions():
+    Загружает и выводит ленту последних операций пользователя.
+
+  - Function loadFormSelects():
+    Заполняет выпадающие списки счетов и категорий в модальном окне.
+
+  - Function setModalType(type):
+    Переключает тип добавляемой операции (Расход/Доход) в модальном окне.
+
+  - Function openAddModal() / closeAddModal():
+    Открывает/закрывает модальное окно добавления операции.
+
+  - Function openCreateAccountModal() / closeCreateAccountModal():
+    Открывает/закрывает модальное окно создания счета.
+
+  - Function handleCreateAccount(e):
+    Отправляет POST-запрос на создание нового банковского счета/кошелька.
+
+  - Function handleCreateTransaction(e):
+    Отправляет POST-запрос на сохранение новой финансовой операции.
+================================================================================
